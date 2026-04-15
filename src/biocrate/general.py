@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 import orjson
 from .constants import MAP_SIZE
+import uuid
+import pyfastx
 
 
 def pkl_load(file_path: str | PathLike):
@@ -100,9 +102,29 @@ def lines_dump(file_path: str | PathLike, content: list[str]):
         file.write("\n".join(content) + "\n")
 
 
+def fasta_load(file_path: str | PathLike):
+    fa = pyfastx.Fasta(file_path, build_index=False)
+    for name, seq in fa:
+        yield name, str(seq)
+
+
+def fasta_dump(file_path: str | PathLike, *, content: list[tuple[str, str]] | dict[str, str]):
+    res_list = []
+    if isinstance(content, dict):
+        content = content.items()  # type: ignore
+    for uid, seq in content:
+        res_list.append(f">{uid}\n{seq}\n")
+    txt_dump(file_path, content="".join(res_list))
+
+
+########################################
 def make_dir(path: str | PathLike):
     return Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def basename(file_path: str | PathLike):
+def base_name(file_path: str | PathLike):
     return Path(file_path).stem
+
+
+def tmp_name():
+    return uuid.uuid4().hex
