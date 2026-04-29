@@ -44,13 +44,17 @@ def json_dump(file_path: str | PathLike, *, content: Any):
         json.dump(content, file, ensure_ascii=False, indent=4)
 
 
-def lmdb_dump(save_path: str | PathLike, *, out_list: list, size: int = 512):
+def lmdb_dump(save_path: str | PathLike, *, content: list | dict, size: int = 512):
 
     env = lmdb.open(str(save_path), subdir=False, lock=False, readahead=False, meminit=False, max_readers=64, map_size=size * MAP_SIZE)
-
-    with env.begin(write=True) as lmdb_txn:
-        for i in tqdm(range(len(out_list)), desc="Writing to LMDB"):
-            lmdb_txn.put(str(i).encode("ascii"), pkl.dumps(out_list[i]))
+    if isinstance(content, list):
+        with env.begin(write=True) as lmdb_txn:
+            for i in tqdm(range(len(content)), desc="Writing to LMDB"):
+                lmdb_txn.put(str(i).encode("ascii"), pkl.dumps(content[i]))
+    elif isinstance(content, dict):
+        with env.begin(write=True) as lmdb_txn:
+            for key, value in tqdm(content.items(), desc="Writing to LMDB"):
+                lmdb_txn.put(str(key).encode("ascii"), pkl.dumps(value))
 
 
 def lmdb_load(file_path: str | PathLike, size: int = 512):
@@ -128,3 +132,6 @@ def base_name(file_path: str | PathLike):
 
 def tmp_name():
     return uuid.uuid4().hex
+
+
+########################################

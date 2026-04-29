@@ -3,6 +3,7 @@ from .general import tmp_name
 from .convertors import PDBParser, MMCIFParser  # type: ignore
 from rdkit import Chem
 
+
 def tranverse_folder(folder):
     filepath_list = []
     for root, _, files in os.walk(folder):
@@ -41,4 +42,3 @@ def parse_sdf(file_path):
     if len(molecules) == 0:
         return Chem.SDMolSupplier(file_path, sanitize=False, removeHs=False)  # if no valid molecules found, return unsanitized
     return molecules
-
