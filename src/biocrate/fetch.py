@@ -29,7 +29,7 @@ def fetch_rcsb_cif(pdb_id):
     with gzip.open(cif_gz_file, "rb") as fp_gz:
         with open(cif_file, "wb") as fp_cif:
             shutil.copyfileobj(fp_gz, fp_cif)  # type: ignore
-    os.unlink(cif_gz_file)
+    os.unlink(path=cif_gz_file)
     return cif_file
 
 

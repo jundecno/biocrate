@@ -1,6 +1,7 @@
 import os
 from .general import tmp_name
-from .convertors import PDBParser, MMCIFParser  # type: ignore
+from .convertors import PDBParser, MMCIFParser, PDBIO, MMCIFIO  # type: ignore
+from .convertors import structure_load, structure_dump
 from rdkit import Chem
 
 
@@ -10,15 +11,6 @@ def tranverse_folder(folder):
         for file in files:
             filepath_list.append(os.path.join(root, file))
     return filepath_list
-
-
-def load_structure(file_path):
-    ext = os.path.splitext(file_path)[-1].lower()
-
-    if ext == ".pdb":
-        return PDBParser(QUIET=True).get_structure(tmp_name(), file_path)
-    elif ext in [".cif", ".mmcif"]:
-        return MMCIFParser(QUIET=True).get_structure(tmp_name(), file_path)
 
 
 def uid2path(uid, is_dir=False, format="cif"):
@@ -42,3 +34,14 @@ def parse_sdf(file_path):
     if len(molecules) == 0:
         return Chem.SDMolSupplier(file_path, sanitize=False, removeHs=False)  # if no valid molecules found, return unsanitized
     return molecules
+
+
+def remove_solvent(file_path, save_path, solvents={"HOH", "WAT", "GOL", "DOD", "SOL"}):
+    structure = structure_load(file_path)
+    solvents = {x.upper() for x in solvents}
+    for model in structure:  # type: ignore
+        for chain in model:
+            solvent_residues = [res for res in chain if res.get_resname().strip() in solvents]
+            for res in solvent_residues:
+                chain.detach_child(res.id)
+    structure_dump(structure, save_path)

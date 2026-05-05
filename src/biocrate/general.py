@@ -10,6 +10,7 @@ import orjson
 from .constants import MAP_SIZE
 import uuid
 import pyfastx
+from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
 
 
 def pkl_load(file_path: str | PathLike):
@@ -119,6 +120,26 @@ def fasta_dump(file_path: str | PathLike, *, content: list[tuple[str, str]] | di
     for uid, seq in content:
         res_list.append(f">{uid}\n{seq}\n")
     txt_dump(file_path, content="".join(res_list))
+
+
+def structure_load(file_path):
+    ext = os.path.splitext(file_path)[-1].lower()
+    if ext == ".pdb":
+        return PDBParser(QUIET=True).get_structure(tmp_name(), file_path)
+    elif ext in [".cif", ".mmcif"]:
+        return MMCIFParser(QUIET=True).get_structure(tmp_name(), file_path)
+
+
+def structure_dump(structure, file_path):
+    ext = os.path.splitext(file_path)[-1].lower()
+    if ext == ".pdb":
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(file_path)
+    elif ext in [".cif", ".mmcif"]:
+        io = MMCIFIO()
+        io.set_structure(structure)
+        io.save(file_path)
 
 
 ########################################
