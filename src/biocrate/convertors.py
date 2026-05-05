@@ -49,7 +49,8 @@ def pdb2fasta(pdb_file: str | PathLike, standard=False) -> dict:
             chain_str = "".join(protein_letters_3to1.get(res.get_resname(), "X") for res in chain)
         else:
             chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
-        res_dict[chain.id] = chain_str
+        if len(chain_str) != 0:
+            res_dict[chain.id] = chain_str
     return res_dict
 
 
@@ -62,7 +63,8 @@ def mmcif2fasta(mmcif_file: str | PathLike, standard=False) -> dict:
             chain_str = "".join(protein_letters_3to1.get(res.get_resname(), "X") for res in chain)
         else:
             chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
-        res_dict[chain.id] = chain_str
+        if len(chain_str) != 0:  # 仅当链中有氨基酸残基时才添加到结果字典中
+            res_dict[chain.id] = chain_str
     return res_dict
 
 
