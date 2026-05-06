@@ -40,7 +40,7 @@ def mmcif2pdb(mmcif_file: str | PathLike, pdb_file: str | PathLike) -> None:
     io.save(pdb_file)
 
 
-def pdb2fasta(pdb_file: str | PathLike, standard=False) -> dict:
+def pdb2fasta(pdb_file: str | PathLike, standard=False):
     parser = PDBParser(QUIET=True)
     model = parser.get_structure(tmp_name(), pdb_file)[0]  # type: ignore
     res_dict = {}
@@ -51,10 +51,12 @@ def pdb2fasta(pdb_file: str | PathLike, standard=False) -> dict:
             chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
         if len(chain_str) != 0:
             res_dict[chain.id] = chain_str
+    if len(res_dict) == 1:
+        return list(res_dict.values())[0]  # 如果只有一条链，直接返回序列字符串
     return res_dict
 
 
-def mmcif2fasta(mmcif_file: str | PathLike, standard=False) -> dict:
+def mmcif2fasta(mmcif_file: str | PathLike, standard=False):
     parser = MMCIFParser(QUIET=True)
     model = parser.get_structure(tmp_name(), mmcif_file)[0]  # type: ignore
     res_dict = {}
@@ -65,6 +67,8 @@ def mmcif2fasta(mmcif_file: str | PathLike, standard=False) -> dict:
             chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
         if len(chain_str) != 0:  # 仅当链中有氨基酸残基时才添加到结果字典中
             res_dict[chain.id] = chain_str
+    if len(res_dict) == 1:
+        return list(res_dict.values())[0]  # 如果只有一条链，直接返回序列字符串
     return res_dict
 
 
