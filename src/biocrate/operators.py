@@ -51,7 +51,9 @@ def remove_hetatm(file_path, save_path):
     structure = structure_load(file_path)
     for model in structure:  # type: ignore
         for chain in model:
-            hetatm_residues = [res for res in chain if res.id[0].strip() != " "]
+            hetatm_residues = [res for res in chain if res.id[0].strip() != ""]
             for res in hetatm_residues:
                 chain.detach_child(res.id)
     structure_dump(structure, save_path)
+
+
