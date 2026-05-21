@@ -3,8 +3,6 @@ from Bio import SeqIO
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
 from Bio.Data.PDBData import protein_letters_3to1_extended, protein_letters_3to1  # type: ignore
 from openbabel import pybel  # type: ignore
-import pysam
-import pybedtools
 
 
 def json2fasta(json_file: str | PathLike, fasta_file: str | PathLike) -> None:
@@ -107,30 +105,3 @@ def fasta2nexuas(fasta_file: str | PathLike, nexus_file: str | PathLike) -> None
 def fasta2holmes(fasta_file: str | PathLike, stockholm_file: str | PathLike) -> None:
     records = SeqIO.parse(str(fasta_file), "fasta")
     SeqIO.write(records, str(stockholm_file), "stockholm")
-
-
-def sam2bam(sam_file: str | PathLike, bam_file: str | PathLike) -> None:
-    with pysam.AlignmentFile(str(sam_file), "r") as inf:
-        with pysam.AlignmentFile(str(bam_file), "wb", template=inf) as outf:
-            for read in inf:
-                outf.write(read)
-    pysam.index(str(bam_file))
-
-
-def bam2sam(bam_file: str | PathLike, sam_file: str | PathLike) -> None:
-    with pysam.AlignmentFile(str(bam_file), "rb") as inf:
-        with pysam.AlignmentFile(str(sam_file), "w", template=inf) as outf:
-            for read in inf:
-                outf.write(read)
-
-
-def psl2bed(psl_file: str | PathLike, bed_file: str | PathLike) -> None:
-    pybedtools.BedTool(psl_file).psl_to_bed().saveas(bed_file)  # type: ignore
-
-
-def gtf2bed(gtf_file: str | PathLike, bed_file: str | PathLike) -> None:
-    pybedtools.BedTool(gtf_file).gtf_to_bed().saveas(bed_file)  # type: ignore
-
-
-def vcf2bed(vcf_file: str | PathLike, bed_file: str | PathLike) -> None:
-    pybedtools.BedTool(vcf_file).to_bed().saveas(bed_file)  # type: ignore
