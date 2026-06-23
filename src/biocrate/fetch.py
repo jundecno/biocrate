@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 import urllib.request as request
-from .constants import SCOP_MIRROR, CIF_MIRROR, RCSB_PDB_MIRROR, UNIPROT_MIRROR, RCSB_FASTA_MIRROR
+from .constants import RCSB_LIGAND_MIRROR, SCOP_MIRROR, CIF_MIRROR, RCSB_PDB_MIRROR, UNIPROT_MIRROR, RCSB_FASTA_MIRROR
 
 
 def fetch_scope(pdb_id):
@@ -41,6 +41,15 @@ def fetch_rcsb_pdb(pdb_id):
     request.urlretrieve(RCSB_PDB_MIRROR + pdb_file, pdb_file)
     return pdb_file
 
+def fetch_rcsb_ligand(lig_id:str):
+    """download lig_id.cif"""
+    lig_id = lig_id.upper()
+    # 获取json数据
+    url = RCSB_LIGAND_MIRROR + lig_id
+    fp = request.urlopen(url)
+    txt = fp.read().decode("utf-8")
+    fp.close()
+    return txt
 
 def fetch_uniprot_sequence(accession):
     """retrieve fasta sequence for accession"""
