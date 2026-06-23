@@ -1,3 +1,5 @@
+import re
+
 import periodictable
 
 MAP_SIZE = 1073741824
@@ -14,3 +16,7 @@ RCSB_FASTA_MIRROR = "https://www.rcsb.org/fasta/entry/"
 RCSB_PDB_MIRROR = "https://www.rcsb.org/pdb/files/"
 RCSB_LIGAND_MIRROR = "https://data.rcsb.org/rest/v1/core/chemcomp/"
 SCOP_MIRROR = "https://scop.berkeley.edu/downloads/pdbstyle"
+UNIPROT_ACCESSION_PATTERN = re.compile(
+    r"^(?:" r"[OPQ][0-9][A-Z0-9]{3}[0-9]" r"|" r"[A-NR-Z][0-9][A-Z][A-Z0-9]{2}[0-9]" r"|" r"[A-NR-Z][0-9][A-Z][A-Z0-9]{2}[0-9][A-Z0-9]{3}[0-9]" r")$"
+)
+EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"

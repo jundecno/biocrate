@@ -7,7 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any
 import orjson
-from .constants import MAP_SIZE
+from .constants import MAP_SIZE, UNIPROT_ACCESSION_PATTERN
 import uuid
 import pyfastx
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
@@ -154,5 +154,24 @@ def base_name(file_path: str | PathLike):
 def tmp_name():
     return uuid.uuid4().hex
 
+def is_uniprot_id(s: str) -> bool:
+    s = s.strip().upper()
+    return bool(UNIPROT_ACCESSION_PATTERN.fullmatch(s))
 
 ########################################
+# 读取jsonl文件， 添加uniprot访问函数
+def jsonl_load(file_path: str | PathLike):
+    with open(file_path, "rb") as f:
+        for line in f:
+            if orjson is not None:
+                yield orjson.loads(line.strip())
+            else:
+                yield json.loads(line.decode("utf-8").strip())
+
+
+def jsonl_dump(data, file_path: str | PathLike):
+    with open(file_path, "ab") as f:
+        if orjson is not None:
+            f.write(orjson.dumps(data) + b"\n")
+        else:
+            f.write(json.dumps(data, ensure_ascii=False).encode("utf-8") + b"\n")

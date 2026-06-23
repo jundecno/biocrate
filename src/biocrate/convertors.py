@@ -2,7 +2,8 @@ from .general import *
 from Bio import SeqIO
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
 from Bio.Data.PDBData import protein_letters_3to1_extended, protein_letters_3to1  # type: ignore
-
+from rdkit.Chem import AllChem
+from rdkit import Chem
 
 def json2fasta(json_file: str | PathLike, fasta_file: str | PathLike) -> None:
     uid2seq = json_load(json_file)
@@ -108,3 +109,23 @@ def fasta2nexuas(fasta_file: str | PathLike, nexus_file: str | PathLike) -> None
 def fasta2holmes(fasta_file: str | PathLike, stockholm_file: str | PathLike) -> None:
     records = SeqIO.parse(str(fasta_file), "fasta")
     SeqIO.write(records, str(stockholm_file), "stockholm")
+
+def smarts2smiles(rxn_smarts):
+    if AllChem is None or Chem is None:
+        raise ImportError("RDKit is required to convert reaction SMARTS to SMILES.")
+    rxn = AllChem.ReactionFromSmarts(rxn_smarts)  # type: ignore
+    reactants = []
+    for mol in rxn.GetReactants():
+        for atom in mol.GetAtoms():
+            atom.SetAtomMapNum(0)
+        reactants.append(Chem.MolToSmiles(mol))
+
+    # products
+    products = []
+    for mol in rxn.GetProducts():
+        for atom in mol.GetAtoms():
+            atom.SetAtomMapNum(0)
+        products.append(Chem.MolToSmiles(mol))
+
+    rxn_smiles = ".".join(reactants) + ">>" + ".".join(products)
+    return rxn_smiles
