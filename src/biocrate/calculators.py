@@ -2,8 +2,6 @@ from .general import structure_load
 from .constants import H_ATOMS
 from Bio.PDB.NeighborSearch import NeighborSearch
 from Bio.PDB.Polypeptide import is_aa
-from rdkit import Chem
-from rdkit.Chem import AllChem
 
 
 def extract_pocket_residues(file_path, comp_id="", radius=4.5):
@@ -41,6 +39,9 @@ def extract_pocket_residues(file_path, comp_id="", radius=4.5):
 
 ## generate mols
 def generate_mol_conformation(smiles, n_repeat=20):
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None

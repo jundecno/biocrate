@@ -2,7 +2,6 @@ from .general import *
 from Bio import SeqIO
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
 from Bio.Data.PDBData import protein_letters_3to1_extended, protein_letters_3to1  # type: ignore
-from openbabel import pybel  # type: ignore
 
 
 def json2fasta(json_file: str | PathLike, fasta_file: str | PathLike) -> None:
@@ -71,6 +70,8 @@ def mmcif2fasta(mmcif_file: str | PathLike, standard=False):
 
 
 def sdf2mol2(sdf_file: str | PathLike, mol2_file: str | PathLike) -> None:
+    from openbabel import pybel  # type: ignore
+
     output = pybel.Outputfile("mol2", str(mol2_file), overwrite=True)
     for mol in pybel.readfile("sdf", str(sdf_file)):
         output.write(mol)
@@ -78,6 +79,8 @@ def sdf2mol2(sdf_file: str | PathLike, mol2_file: str | PathLike) -> None:
 
 
 def mol2sdf(mol2_file: str | PathLike, sdf_file: str | PathLike) -> None:
+    from openbabel import pybel  # type: ignore
+
     output = pybel.Outputfile("sdf", str(sdf_file), overwrite=True)
     for mol in pybel.readfile("mol2", str(mol2_file)):
         output.write(mol)

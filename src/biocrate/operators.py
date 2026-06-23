@@ -1,8 +1,5 @@
 import os
-from .general import tmp_name
-from .convertors import PDBParser, MMCIFParser, PDBIO, MMCIFIO  # type: ignore
-from .convertors import structure_load, structure_dump
-from rdkit import Chem
+from .general import structure_load, structure_dump
 
 
 def tranverse_folder(folder):
@@ -26,6 +23,8 @@ def pdbid2path(pdbid, is_dir=False, format="cif"):
 
 
 def parse_sdf(file_path):
+    from rdkit import Chem
+
     suppl = Chem.SDMolSupplier(file_path, sanitize=True, removeHs=True)
     molecules = []
     for mol in suppl:
