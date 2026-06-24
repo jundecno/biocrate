@@ -199,12 +199,19 @@ def evaluate_binary_classification(y_true, y_pred, y_score=None) -> dict[str, fl
 
     y_pred is hard label in {0, 1}; y_score is optional probability/logit-like score.
     """
+    tn, fp, fn, tp = _binary_confusion(y_true, y_pred)
+    precision_denom = tp + fp
+    recall_denom = tp + fn
+    specificity_denom = tn + fp
+    precision = tp / precision_denom if precision_denom > 0 else 0.0
+    recall = tp / recall_denom if recall_denom > 0 else 0.0
+    f1_denom = precision + recall
     metrics = {
-        "accuracy": accuracy_score(y_true, y_pred),
-        "precision": precision_score(y_true, y_pred),
-        "recall": recall_score(y_true, y_pred),
-        "specificity": specificity_score(y_true, y_pred),
-        "f1": f1_score(y_true, y_pred),
+        "accuracy": (tp + tn) / (tp + tn + fp + fn),
+        "precision": float(precision),
+        "recall": float(recall),
+        "specificity": float(tn / specificity_denom) if specificity_denom > 0 else 0.0,
+        "f1": float(2 * precision * recall / f1_denom) if f1_denom > 0 else 0.0,
     }
     if y_score is not None:
         metrics["roc_auc"] = roc_auc_score(y_true, y_score)

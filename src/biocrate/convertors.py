@@ -2,23 +2,24 @@ from .general import *
 from Bio import SeqIO
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser, MMCIFIO  # type: ignore
 from Bio.Data.PDBData import protein_letters_3to1_extended, protein_letters_3to1  # type: ignore
-from rdkit.Chem import AllChem
-from rdkit import Chem
 
 def json2fasta(json_file: str | PathLike, fasta_file: str | PathLike) -> None:
-    uid2seq = json_load(json_file)
-    res_list = []
-    with open(fasta_file, "w", encoding="utf-8") as f:
-        for i, (uid, seq) in enumerate(uid2seq.items()):
-            res_list.append(f">{uid}\n{seq}\n")
-    txt_dump(fasta_file, content="".join(res_list))
+    fasta_dump(fasta_file, content=json_load(json_file))
 
 
 def fasta2json(fasta_file: str | PathLike, json_file: str | PathLike) -> None:
-    uid2seq = {}
-    for uid, seq in fasta_load(fasta_file):
-        uid2seq[uid] = seq
-    json_dump(json_file, content=uid2seq)
+    records = fasta_load(fasta_file)
+    json_dump(json_file, content=records if isinstance(records, dict) else dict(records))
+
+
+def _model_to_fasta(model, standard=False):
+    table = protein_letters_3to1 if standard else protein_letters_3to1_extended
+    res_dict = {
+        chain.id: chain_str
+        for chain in model
+        if (chain_str := "".join(table.get(res.get_resname(), "X") for res in chain))
+    }
+    return next(iter(res_dict.values())) if len(res_dict) == 1 else res_dict
 
 
 ############ Bioinformatics related functions ############
@@ -41,33 +42,13 @@ def mmcif2pdb(mmcif_file: str | PathLike, pdb_file: str | PathLike) -> None:
 def pdb2fasta(pdb_file: str | PathLike, standard=False):
     parser = PDBParser(QUIET=True)
     model = parser.get_structure(tmp_name(), pdb_file)[0]  # type: ignore
-    res_dict = {}
-    for chain in model:
-        if standard:
-            chain_str = "".join(protein_letters_3to1.get(res.get_resname(), "X") for res in chain)
-        else:
-            chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
-        if len(chain_str) != 0:
-            res_dict[chain.id] = chain_str
-    if len(res_dict) == 1:
-        return list(res_dict.values())[0]  # 如果只有一条链，直接返回序列字符串
-    return res_dict
+    return _model_to_fasta(model, standard=standard)
 
 
 def mmcif2fasta(mmcif_file: str | PathLike, standard=False):
     parser = MMCIFParser(QUIET=True)
     model = parser.get_structure(tmp_name(), mmcif_file)[0]  # type: ignore
-    res_dict = {}
-    for chain in model:
-        if standard:
-            chain_str = "".join(protein_letters_3to1.get(res.get_resname(), "X") for res in chain)
-        else:
-            chain_str = "".join(protein_letters_3to1_extended.get(res.get_resname(), "X") for res in chain)
-        if len(chain_str) != 0:  # 仅当链中有氨基酸残基时才添加到结果字典中
-            res_dict[chain.id] = chain_str
-    if len(res_dict) == 1:
-        return list(res_dict.values())[0]  # 如果只有一条链，直接返回序列字符串
-    return res_dict
+    return _model_to_fasta(model, standard=standard)
 
 
 def sdf2mol2(sdf_file: str | PathLike, mol2_file: str | PathLike) -> None:
@@ -111,8 +92,9 @@ def fasta2holmes(fasta_file: str | PathLike, stockholm_file: str | PathLike) -> 
     SeqIO.write(records, str(stockholm_file), "stockholm")
 
 def smarts2smiles(rxn_smarts):
-    if AllChem is None or Chem is None:
-        raise ImportError("RDKit is required to convert reaction SMARTS to SMILES.")
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+
     rxn = AllChem.ReactionFromSmarts(rxn_smarts)  # type: ignore
     reactants = []
     for mol in rxn.GetReactants():

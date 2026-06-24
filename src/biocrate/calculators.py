@@ -12,7 +12,8 @@ def extract_pocket_residues(file_path, comp_id="", radius=4.5):
     comp_id = comp_id.strip()
 
     for res in model.get_residues():
-        is_ligand = res.resname.strip() == comp_id and res.id[0].strip() != ""
+        resname = res.resname.strip()
+        is_ligand = resname == comp_id and res.id[0].strip() != ""
         for atom in res:
             if atom.element.upper() in H_ATOMS:
                 continue
@@ -32,7 +33,7 @@ def extract_pocket_residues(file_path, comp_id="", radius=4.5):
 
         for c_res in close_resi:
             c_chain = c_res.get_parent()  # type: ignore
-            if c_res.resname != comp_id and is_aa(c_res, standard=False):  # type: ignore
+            if c_res.resname.strip() != comp_id and is_aa(c_res, standard=False):  # type: ignore
                 pocket_res_keys.add((c_chain.id, c_res.id))  # type: ignore
     return pocket_res_keys
 
@@ -61,8 +62,8 @@ def generate_mol_conformation(smiles, n_repeat=20):
     else:
         res = AllChem.UFFOptimizeMoleculeConfs(mol, numThreads=16)  # type: ignore
 
-    energies = [r[1] if r[0] == 0 else float("inf") for r in res]
-    best_conf_id = energies.index(min(energies))
+    best_idx, _ = min(enumerate(res), key=lambda item: item[1][1] if item[1][0] == 0 else float("inf"))
+    best_conf_id = cids[best_idx]
 
     conf = Chem.Conformer(mol.GetConformer(best_conf_id))
 

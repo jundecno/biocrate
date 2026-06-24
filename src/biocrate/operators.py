@@ -1,6 +1,9 @@
 import os
+
+import numpy as np
+
+from .constants import STAND_RESI_DICT
 from .general import structure_load, structure_dump
-from rdkit import Chem
 
 
 def tranverse_folder(folder):
@@ -24,12 +27,11 @@ def pdbid2path(pdbid, is_dir=False, format="cif"):
 
 
 def parse_sdf(file_path):
+    from rdkit import Chem
+
     suppl = Chem.SDMolSupplier(file_path, sanitize=True, removeHs=True)
-    molecules = []
-    for mol in suppl:
-        if mol is not None:
-            molecules.append(mol)
-    if len(molecules) == 0:
+    molecules = [mol for mol in suppl if mol is not None]
+    if not molecules:
         return Chem.SDMolSupplier(file_path, sanitize=False, removeHs=False)  # if no valid molecules found, return unsanitized
     return molecules
 
@@ -56,6 +58,8 @@ def remove_hetatm(file_path, save_path):
 
 
 def MolFromSmiles(smiles):
+    from rdkit import Chem
+
     mol = Chem.MolFromSmiles(smiles)
     if not mol:
         return None
@@ -66,9 +70,9 @@ def MolFromSmiles(smiles):
 
 # cano smiles
 def cano_smiles(smiles: str, isomeric: bool = True):
+    from rdkit import Chem
+
     smiles = smiles.strip()
-    if Chem is None:
-        return smiles or None
     mol = MolFromSmiles(smiles)
     if not mol:
         return None
@@ -83,14 +87,14 @@ def cano_rxn(rxn, exchange_pos=False, isomeric=True):
     if len(data) != 3:
         return None
 
-    reactants = [cano_smiles(each, isomeric) for each in data[0].split(".")]
-    products = [cano_smiles(each, isomeric) for each in data[-1].split(".")]
+    reactants = tuple(cano_smiles(each, isomeric) for each in data[0].split("."))
+    products = tuple(cano_smiles(each, isomeric) for each in data[-1].split("."))
 
     if None in reactants or None in products:
         return None
 
-    reactants = sorted(reactants)  # type: ignore
-    products = sorted(products)  # type: ignore
+    reactants = sorted(reactants)
+    products = sorted(products)
 
     if exchange_pos:
         new_rxn = f"{'.'.join(products)}>>{'.'.join(reactants)}"
@@ -101,19 +105,25 @@ def cano_rxn(rxn, exchange_pos=False, isomeric=True):
 
 def get_substrates(rxn_smiles: str):
     # Implementation for extracting substrates from reaction SMILES
-    reactants = rxn_smiles.strip().split(">")[0].split(".")
-    if Chem is None:
-        return max(reactants, key=len) if reactants else None
-    heavy_atoms = {}
+    from rdkit import Chem
+
+    reactants = rxn_smiles.strip().split(">", 1)[0].split(".")
+    best_reactant = None
+    best_count = -1
     for reactant in reactants:
-        heavy_atoms[reactant] = Chem.MolFromSmiles(reactant).GetNumHeavyAtoms()
-    sorted_reactants = sorted(heavy_atoms.items(), key=lambda x: x[1], reverse=True)
-    return sorted_reactants[0][0] if sorted_reactants else None
+        mol = Chem.MolFromSmiles(reactant)
+        if mol is None:
+            continue
+        count = mol.GetNumHeavyAtoms()
+        if count > best_count:
+            best_reactant = reactant
+            best_count = count
+    return best_reactant
 
 
 def get_molecule_features(smiles: str):
-    if Chem is None:
-        return None, None, None, None, None
+    from rdkit import Chem
+
     mol = Chem.MolFromSmiles(smiles)
     if not mol:
         return None, None, None, None, None
@@ -133,3 +143,33 @@ def smiles2name(smiles: str) -> str | None:
         return None
     compound = compounds[0]
     return compound.iupac_name
+
+
+# onehot encoder
+def onehot_encode(index: str, alphabet: list[str] | dict[str, int]) -> list:
+    onehot = [0] * len(alphabet)
+    if index not in alphabet:
+        return onehot
+    idx = alphabet.index(index) if isinstance(alphabet, list) else alphabet[index]
+    onehot[idx] = 1
+    return onehot
+
+
+def letter3to1(res_name):
+    return STAND_RESI_DICT.get(res_name, "X")
+
+
+def norm_angle_deg(angle):
+    if angle is None or np.isnan(angle):
+        return [0.0, 0.0]
+
+    rad = np.deg2rad(angle)
+    return [float(np.sin(rad)), float(np.cos(rad))]
+
+
+def norm_hbond_energy(e, min_energy=-10.0):
+    if e is None or np.isnan(e):
+        return 0.0
+
+    e = np.clip(e, min_energy, 0.0)
+    return float(-e / abs(min_energy))
